@@ -1,28 +1,87 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>게시판</title>
+	<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-		<div class="container">
-			<h1>게시판</h1>
-			<div class="post">
-			<h2>게시글 작성</h2>
-			<input type="text" id="title" placeholder="제목" required>
-			<textarea name="" id="content" placeholder="내용" required></textarea>
-			<button id="submit">작성</button>
-			</div>
+	<!-- 게시판 화면 -->
+	<div class="container" id="boardContainer">
+		<h1>게시판</h1>
+		<form id="postForm">
+			<input type="text" id="title" placeholder="제목" required />
+			<textarea id="content" placeholder="내용" required></textarea>
+			<button type="submit">게시글 작성</button>
+		</form>
 
-			<div class="list">
-				<h2>목록</h2>
-				<ul id="board-list">
-
-				</ul>
-			</div>
+		<div id="board">
+			<h2>게시글 목록</h2>
+			<ul id="postList"></ul>
 		</div>
+	</div>
 
+	<script>
+		// 게시판 처리
+		document.addEventListener('DOMContentLoaded', function () {
+			const postForm = document.getElementById('postForm');
+			const postList = document.getElementById('postList');
+			const titleInput = document.getElementById('title');
+			const contentInput = document.getElementById('content');
+			const board = document.getElementById('board');
 
+			let posts = []; // 게시글 데이터를 저장할 배열
+
+			// 게시글 작성 시 실행되는 함수
+			postForm.addEventListener('submit', function (e) {
+				e.preventDefault(); // 폼 제출 기본 동작 방지
+
+				const title = titleInput.value.trim();
+				const content = contentInput.value.trim();
+
+				if (title && content) {
+					const post = {
+						id: Date.now(),
+						title: title,
+						content: content
+					};
+
+					posts.push(post); // 게시글을 배열에 추가
+					renderPosts(); // 게시글 목록을 다시 렌더링
+
+					// 게시글 작성 후 게시판 영역을 표시
+					board.style.display = 'block'; // 게시판을 보이도록 설정
+				}
+
+				titleInput.value = ''; // 제목 입력창 초기화
+				contentInput.value = ''; // 내용 입력창 초기화
+			});
+
+			// 게시글 목록을 화면에 렌더링하는 함수
+			function renderPosts() {
+				postList.innerHTML = ''; // 기존 목록 초기화
+
+				posts.forEach(post => {
+					const li = document.createElement('li');
+					li.innerHTML = `
+                <strong>${post.title}</strong>
+                <p>${post.content}</p>
+                <button onclick="deletePost(${post.id})">삭제</button>
+            `;
+					postList.appendChild(li);
+				});
+			}
+
+			// 게시글 삭제 함수
+			window.deletePost = function (postId) {
+				posts = posts.filter(post => post.id !== postId); // 해당 ID를 가진 게시글 삭제
+				renderPosts(); // 게시글 목록 다시 렌더링
+			};
+		});
+	</script>
 </body>
+
 </html>
