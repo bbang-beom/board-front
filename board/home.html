@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>홈</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .home-container {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        nav ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            font-size: 18px;
+            color: #4CAF50;
+        }
+
+        nav ul li a:hover {
+            color: #45a049;
+        }
+
+        .ad-section img {
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            transition: transform 0.3s;
+        }
+
+        .ad-section img:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="home-container">
+        <h1>환영합니다!</h1>
+        <nav>
+            <ul>
+                <li><a href="login.html">로그인</a></li>
+            </ul>
+        </nav>
+        <div class="ad-section">
+            <a href="adpage.html">
+                <img src="ad-image.jpg" alt="광고 페이지로 이동" style="width: 300px; height: auto; margin-top: 20px;">
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
