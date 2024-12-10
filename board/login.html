@@ -21,17 +21,19 @@
 
     <script>
         // 로그인 처리
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
             e.preventDefault();
-
+        
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-
+        
             // 로컬 스토리지에서 사용자 정보 확인
-            const storedPassword = localStorage.getItem(username);
-
-            if (storedPassword && storedPassword === password) {
-                // 로그인 성공: 게시판 페이지로 이동
+            const userData = JSON.parse(localStorage.getItem(username));
+        
+            if (userData && userData.password === password) {
+                // 로그인 성공
+                sessionStorage.setItem('loggedInUser', username); // 세션에 로그인 상태 저장
+                alert('로그인 성공!');
                 window.location.href = 'board.html'; // board.html로 이동
             } else {
                 alert('아이디 또는 비밀번호가 틀렸습니다.');

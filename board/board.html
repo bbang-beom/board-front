@@ -6,15 +6,61 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>게시판</title>
 	<link rel="stylesheet" href="style.css">
-</head>
+	<style>
+		.header {
+			display: flex;
+			justify-content: flex-end;
+			padding: 10px 20px;
+			background-color: #f4f4f4;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		}
 
+		.right-header {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.mypage-link, .minigame-link {
+			text-decoration: none;
+			font-size: 16px;
+			color: #4CAF50;
+		}
+
+		.mypage-link:hover, .minigame-link:hover {
+			color: #45a049;
+		}
+
+		.logout-button {
+			background-color: #f44336;
+			color: white;
+			border: none;
+			border-radius: 4px;
+			padding: 5px 10px;
+			cursor: pointer;
+			font-size: 16px;
+		}
+
+		.logout-button:hover {
+			background-color: #d32f2f;
+		}
+	</style>
+</head>
 <body>
 	<!-- 게시판 화면 -->
+	<div class="header">
+		<div class="right-header">
+			<a href="mypage.html" class="mypage-link">마이페이지</a>
+			<a href="minigame.html" class="minigame-link">미니게임</a>
+			<button class="logout-button" onclick="logout()">로그아웃</button>
+		</div>
+	</div>
 	<div class="container" id="boardContainer">
-		<h1>게시판</h1>
+		<h1>나만의 게시판</h1>
 		<form id="postForm">
 			<input type="text" id="title" placeholder="제목" required />
 			<textarea id="content" placeholder="내용" required></textarea>
+			<input type="file" id="media" accept="image/*,video/*" />
 			<button type="submit">게시글 작성</button>
 		</form>
 
@@ -31,56 +77,126 @@
 			const postList = document.getElementById('postList');
 			const titleInput = document.getElementById('title');
 			const contentInput = document.getElementById('content');
-			const board = document.getElementById('board');
-
-			let posts = []; // 게시글 데이터를 저장할 배열
-
-			// 게시글 작성 시 실행되는 함수
-			postForm.addEventListener('submit', function (e) {
-				e.preventDefault(); // 폼 제출 기본 동작 방지
-
-				const title = titleInput.value.trim();
-				const content = contentInput.value.trim();
-
-				if (title && content) {
-					const post = {
-						id: Date.now(),
-						title: title,
-						content: content
-					};
-
-					posts.push(post); // 게시글을 배열에 추가
-					renderPosts(); // 게시글 목록을 다시 렌더링
-
-					// 게시글 작성 후 게시판 영역을 표시
-					board.style.display = 'block'; // 게시판을 보이도록 설정
-				}
-
-				titleInput.value = ''; // 제목 입력창 초기화
-				contentInput.value = ''; // 내용 입력창 초기화
-			});
-
-			// 게시글 목록을 화면에 렌더링하는 함수
-			function renderPosts() {
-				postList.innerHTML = ''; // 기존 목록 초기화
-
-				posts.forEach(post => {
-					const li = document.createElement('li');
-					li.innerHTML = `
-                <strong>${post.title}</strong>
-                <p>${post.content}</p>
-                <button onclick="deletePost(${post.id})">삭제</button>
-            `;
-					postList.appendChild(li);
-				});
+			const mediaInput = document.getElementById('media');
+	
+			// 로그인 사용자 확인
+			const loggedInUser = sessionStorage.getItem('loggedInUser');
+			if (!loggedInUser) {
+					alert('로그인 상태가 아닙니다. 로그인 페이지로 이동합니다.');
+					window.location.href = 'login.html';
+					return;
 			}
-
-			// 게시글 삭제 함수
-			window.deletePost = function (postId) {
-				posts = posts.filter(post => post.id !== postId); // 해당 ID를 가진 게시글 삭제
-				renderPosts(); // 게시글 목록 다시 렌더링
+			console.log('현재 로그인된 사용자:', loggedInUser);
+	
+			// 사용자별 게시글 데이터를 로드
+			let posts = [];
+			try {
+					posts = JSON.parse(localStorage.getItem(`posts_${loggedInUser}`)) || [];
+					console.log('불러온 게시글 데이터:', posts);
+			} catch (error) {
+					console.error('로컬 스토리지 데이터 로드 중 오류 발생:', error);
+			}
+	
+			// 로그아웃 처리
+			window.logout = function () {
+					sessionStorage.removeItem('loggedInUser');
+					alert('로그아웃 되었습니다.');
+					window.location.href = 'login.html';
 			};
-		});
+	
+			// 게시글 작성 처리
+			postForm.addEventListener('submit', function (e) {
+					e.preventDefault();
+	
+					const title = titleInput.value.trim();
+					const content = contentInput.value.trim();
+					const mediaFile = mediaInput.files[0];
+					let mediaUrl = null;
+	
+					if (mediaFile) {
+							try {
+									mediaUrl = URL.createObjectURL(mediaFile);
+							} catch (error) {
+									alert('파일 업로드 중 문제가 발생했습니다.');
+									console.error('File upload error:', error);
+							}
+					}
+	
+					if (title && content) {
+							const post = {
+									id: Date.now(),
+									title,
+									content,
+									media: mediaUrl,
+							};
+	
+							posts.push(post);
+							localStorage.setItem(`posts_${loggedInUser}`, JSON.stringify(posts));
+							console.log('게시글 추가 완료:', post);
+							renderPosts();
+					} else {
+							alert('제목과 내용을 입력하세요.');
+					}
+	
+					// 입력 필드 초기화
+					titleInput.value = '';
+					contentInput.value = '';
+					mediaInput.value = '';
+			});
+	
+			// 게시글 목록 렌더링
+			function renderPosts() {
+					postList.innerHTML = '';
+					console.log('렌더링 중인 게시글:', posts);
+	
+					if (posts.length === 0) {
+							postList.innerHTML = '<li>게시글이 없습니다.</li>';
+							return;
+					}
+	
+					posts.forEach((post) => {
+							const li = document.createElement('li');
+							li.innerHTML = `
+									<strong>${post.title}</strong>
+									<p>${post.content}</p>
+									${
+											post.media
+													? `<img src="${post.media}" alt="첨부 파일" style="max-width: 100%; height: auto;">`
+													: ''
+									}
+									<button onclick="editPost(${post.id})">수정</button>
+									<button onclick="deletePost(${post.id})">삭제</button>
+							`;
+							postList.appendChild(li);
+					});
+			}
+	
+			// 게시글 삭제 처리
+			window.deletePost = function (postId) {
+					posts = posts.filter((post) => post.id !== postId);
+					localStorage.setItem(`posts_${loggedInUser}`, JSON.stringify(posts));
+					renderPosts();
+			};
+	
+			// 게시글 수정 처리
+			window.editPost = function (postId) {
+					const post = posts.find((post) => post.id === postId);
+					if (post) {
+							const newTitle = prompt('새 제목을 입력하세요:', post.title);
+							const newContent = prompt('새 내용을 입력하세요:', post.content);
+	
+							if (newTitle !== null && newContent !== null) {
+									post.title = newTitle.trim();
+									post.content = newContent.trim();
+									localStorage.setItem(`posts_${loggedInUser}`, JSON.stringify(posts));
+									renderPosts();
+							}
+					}
+			};
+	
+			// 페이지 로드 시 게시글 렌더링
+			renderPosts();
+	});
 	</script>
 </body>
 
