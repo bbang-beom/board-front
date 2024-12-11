@@ -50,6 +50,7 @@ button:hover {
 
 #board {
     margin-top: 20px;
+    display: block;
 }
 
 ul {
@@ -117,4 +118,8 @@ li button:hover {
 /* 게시판 숨기기 */
 #board {
     display: none;
+}
+
+#postList {
+    display: block;
 }

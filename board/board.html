@@ -44,10 +44,85 @@
 		.logout-button:hover {
 			background-color: #d32f2f;
 		}
+
+		.calendar {
+			position: fixed;
+			bottom: 20px;
+			right: 20px;
+			width: 250px;
+			background-color: #fff;
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			padding: 10px;
+			display: none; /* 기본적으로 숨김 */
+		}
+
+		.calendar h3 {
+			text-align: center;
+			margin: 0;
+			padding: 10px 0;
+			color: #333;
+		}
+
+		.calendar table {
+			width: 100%;
+			border-collapse: collapse;
+			text-align: center;
+		}
+
+		.calendar th {
+			background-color: #f4f4f4;
+			padding: 5px;
+			border: 1px solid #ddd;
+		}
+
+		.calendar td {
+			padding: 5px;
+			border: 1px solid #ddd;
+			cursor: pointer;
+		}
+
+		.calendar td:hover {
+			background-color: #eaeaea;
+		}
+
+		.calendar .today {
+			background-color: black;
+			color: white;
+		}
+
+		#dateTimeDisplay {
+			position: fixed;
+			bottom: 20px;
+			right: 20px;
+			background-color: black;
+			color: white;
+			padding: 10px;
+			border-radius: 8px;
+			cursor: pointer;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		/* 닫기 버튼 스타일 */
+		#closeCalendarButton {
+			position: absolute;
+			top: 5px;
+			right: 5px;
+			background-color: transparent;
+			border: none;
+			color: #999;
+			font-size: 18px;
+			cursor: pointer;
+		}
+		
+				#closeCalendarButton:hover {
+					color: #333;
+				}
 	</style>
 </head>
+
 <body>
-	<!-- 게시판 화면 -->
 	<div class="header">
 		<div class="right-header">
 			<a href="mypage.html" class="mypage-link">마이페이지</a>
@@ -55,6 +130,7 @@
 			<button class="logout-button" onclick="logout()">로그아웃</button>
 		</div>
 	</div>
+	<!-- 게시판 화면 -->
 	<div class="container" id="boardContainer">
 		<h1>나만의 게시판</h1>
 		<form id="postForm">
@@ -70,41 +146,55 @@
 		</div>
 	</div>
 
+	<div id="dateTimeDisplay">현재 시간</div>
+	<div class="calendar" id="calendar">
+		<button id="closeCalendarButton" onclick="closeCalendar()">×</button>
+		<h3 id="calendarTitle"></h3>
+		<table>
+			<thead>
+				<tr>
+					<th>일</th>
+					<th>월</th>
+					<th>화</th>
+					<th>수</th>
+					<th>목</th>
+					<th>금</th>
+					<th>토</th>
+				</tr>
+			</thead>
+			<tbody id="calendarBody"></tbody>
+		</table>
+	</div>
+
 	<script>
-		// 게시판 처리
 		document.addEventListener('DOMContentLoaded', function () {
 			const postForm = document.getElementById('postForm');
 			const postList = document.getElementById('postList');
 			const titleInput = document.getElementById('title');
 			const contentInput = document.getElementById('content');
 			const mediaInput = document.getElementById('media');
+			const board = document.getElementById('board');
+			const dateTimeDisplay = document.getElementById('dateTimeDisplay');
+			const calendar = document.getElementById('calendar');
+			const closeCalendarButton = document.getElementById('closeCalendarButton');
+			const calendarTitle = document.getElementById('calendarTitle');
+			const calendarBody = document.getElementById('calendarBody');
 	
-			// 로그인 사용자 확인
 			const loggedInUser = sessionStorage.getItem('loggedInUser');
 			if (!loggedInUser) {
 					alert('로그인 상태가 아닙니다. 로그인 페이지로 이동합니다.');
 					window.location.href = 'login.html';
 					return;
 			}
-			console.log('현재 로그인된 사용자:', loggedInUser);
 	
-			// 사용자별 게시글 데이터를 로드
-			let posts = [];
-			try {
-					posts = JSON.parse(localStorage.getItem(`posts_${loggedInUser}`)) || [];
-					console.log('불러온 게시글 데이터:', posts);
-			} catch (error) {
-					console.error('로컬 스토리지 데이터 로드 중 오류 발생:', error);
-			}
+			let posts = JSON.parse(localStorage.getItem(`posts_${loggedInUser}`)) || [];
 	
-			// 로그아웃 처리
 			window.logout = function () {
 					sessionStorage.removeItem('loggedInUser');
 					alert('로그아웃 되었습니다.');
 					window.location.href = 'login.html';
 			};
 	
-			// 게시글 작성 처리
 			postForm.addEventListener('submit', function (e) {
 					e.preventDefault();
 	
@@ -116,76 +206,64 @@
 					if (mediaFile) {
 							try {
 									mediaUrl = URL.createObjectURL(mediaFile);
+									console.log('첨부 파일 URL:', mediaUrl);
 							} catch (error) {
-									alert('파일 업로드 중 문제가 발생했습니다.');
-									console.error('File upload error:', error);
+									console.error('파일 업로드 오류:', error);
 							}
 					}
 	
 					if (title && content) {
-							const post = {
-									id: Date.now(),
-									title,
-									content,
-									media: mediaUrl,
-							};
-	
+							const post = { id: Date.now(), title, content, media: mediaUrl };
 							posts.push(post);
 							localStorage.setItem(`posts_${loggedInUser}`, JSON.stringify(posts));
-							console.log('게시글 추가 완료:', post);
 							renderPosts();
-					} else {
-							alert('제목과 내용을 입력하세요.');
 					}
 	
-					// 입력 필드 초기화
 					titleInput.value = '';
 					contentInput.value = '';
 					mediaInput.value = '';
 			});
 	
-			// 게시글 목록 렌더링
 			function renderPosts() {
-					postList.innerHTML = '';
-					console.log('렌더링 중인 게시글:', posts);
+				postList.innerHTML = '';
 	
-					if (posts.length === 0) {
-							postList.innerHTML = '<li>게시글이 없습니다.</li>';
-							return;
-					}
+				if (posts.length === 0) {
+						board.style.display = 'none'; // 게시글이 없으면 숨기기
+						postList.innerHTML = '<li>게시글이 없습니다.</li>';
+						return;
+				}
 	
-					posts.forEach((post) => {
-							const li = document.createElement('li');
-							li.innerHTML = `
-									<strong>${post.title}</strong>
-									<p>${post.content}</p>
-									${
-											post.media
-													? `<img src="${post.media}" alt="첨부 파일" style="max-width: 100%; height: auto;">`
-													: ''
-									}
-									<button onclick="editPost(${post.id})">수정</button>
-									<button onclick="deletePost(${post.id})">삭제</button>
-							`;
-							postList.appendChild(li);
-					});
+				board.style.display = 'block'; // 게시글이 있으면 표시하기
+	
+				posts.forEach((post) => {
+						const li = document.createElement('li');
+						li.innerHTML = `
+								<strong>${post.title}</strong>
+								<p>${post.content}</p>
+								${
+										post.media
+												? `<img src="${post.media}" alt="첨부 파일" style="max-width: 100%; height: auto;">`
+												: ''
+								}
+								<button onclick="editPost(${post.id})">수정</button>
+								<button onclick="deletePost(${post.id})">삭제</button>
+						`;
+						postList.appendChild(li);
+				});
 			}
 	
-			// 게시글 삭제 처리
 			window.deletePost = function (postId) {
 					posts = posts.filter((post) => post.id !== postId);
 					localStorage.setItem(`posts_${loggedInUser}`, JSON.stringify(posts));
 					renderPosts();
 			};
 	
-			// 게시글 수정 처리
 			window.editPost = function (postId) {
 					const post = posts.find((post) => post.id === postId);
 					if (post) {
 							const newTitle = prompt('새 제목을 입력하세요:', post.title);
 							const newContent = prompt('새 내용을 입력하세요:', post.content);
-	
-							if (newTitle !== null && newContent !== null) {
+							if (newTitle && newContent) {
 									post.title = newTitle.trim();
 									post.content = newContent.trim();
 									localStorage.setItem(`posts_${loggedInUser}`, JSON.stringify(posts));
@@ -194,9 +272,90 @@
 					}
 			};
 	
-			// 페이지 로드 시 게시글 렌더링
 			renderPosts();
-	});
+	
+			// 달력 생성 함수
+			function createCalendar() {
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = now.getMonth();
+				const today = now.getDate();
+
+				calendarTitle.textContent = `${year}년 ${month + 1}월`;
+				calendarBody.innerHTML = '';
+
+				const firstDay = new Date(year, month, 1).getDay();
+				const lastDate = new Date(year, month + 1, 0).getDate();
+
+				let date = 1;
+				for (let i = 0; i < 6; i++) {
+					const row = document.createElement('tr');
+
+					for (let j = 0; j < 7; j++) {
+						const cell = document.createElement('td');
+						if (i === 0 && j < firstDay) {
+							cell.textContent = '';
+						} else if (date > lastDate) {
+							cell.textContent = '';
+						} else {
+							cell.textContent = date;
+							if (date === today) {
+								cell.classList.add('today');
+							}
+							date++;
+						}
+						row.appendChild(cell);
+					}
+					calendarBody.appendChild(row);
+				}
+			}
+	
+			// 현재 시간 업데이트 함수
+			function updateDateTime() {
+				const now = new Date();
+				const formattedDate = now.toLocaleDateString('ko-KR', {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit',
+					second: '2-digit',
+				});
+				dateTimeDisplay.textContent = formattedDate;
+			}
+	
+			setInterval(updateDateTime, 1000); // 1초마다 시간 업데이트
+	
+			// 시간 표시 클릭 시 달력 표시 토글 및 시간 갱신
+			dateTimeDisplay.addEventListener('click', () => {
+				if (calendar.style.display === 'block') {
+					// 달력이 열려 있으면 닫고 시간으로 돌아가기
+					calendar.style.display = 'none';
+					updateDateTime(); // 시간 표시를 갱신
+				} else {
+					// 시간 표시가 보일 때 클릭하면 달력 표시
+					calendar.style.display = 'block';
+				}
+			});
+	
+			// 달력 초기화
+			createCalendar();
+		});
+
+			// 달력 표시/숨기기
+			function toggleCalendar() {
+				if (calendar.style.display === 'block') {
+					calendar.style.display = 'none';
+				} else {
+					calendar.style.display = 'block';
+					createCalendar();
+				}
+			}
+		
+					// 닫기 버튼 클릭 시
+					window.closeCalendar = function () {
+						calendar.style.display = 'none';
+					};
 	</script>
 </body>
 
